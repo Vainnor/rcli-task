@@ -1,45 +1,50 @@
 // src/commands/add.rs
 
 use crate::data::{load_tasks, save_tasks};
-use crate::models::Task;
-use crate::errors::TaskError; // Import custom error type
-use crate::find_task_mut; // Assuming find_task_mut is accessible
+use crate::models::Task; // No longer need usize for ID
+use crate::errors::TaskError;
+use crate::helpers::resolve_task_mut; // NEW: Import resolve_task_mut
+use chrono::NaiveDate;
+use uuid::Uuid; // NEW: Import Uuid
 
-pub fn handle_add_command(description: String, parent_id: Option<usize>) -> Result<(), TaskError> { // Updated return type
+pub fn handle_add_command(
+    description: String,
+    parent_id_prefix: Option<String>, // Changed name to clarify it's a prefix string
+    due_date_str: Option<String>,
+) -> Result<(), TaskError> {
     let mut tasks = load_tasks()?;
 
+    let due_date = if let Some(s) = due_date_str {
+        Some(NaiveDate::parse_from_str(&s, "%Y-%m-%d")?)
+    } else {
+        None
+    };
+
     let new_task = Task {
-        id: 0, // Temporary ID
+        id: Uuid::new_v4(), // NEW: Generate a UUID
         description: description.clone(),
         completed: false,
         subtasks: Vec::new(),
+        due_date,
+        display_position: 0, // Will be set during printing, not saved
     };
 
-    match parent_id {
-        Some(id) => {
-            if let Some(parent_task) = find_task_mut(&mut tasks, id) {
-                let new_subtask_id = parent_task.subtasks.len() + 1;
-                let mut subtask_to_add = new_task;
-                subtask_to_add.id = new_subtask_id;
-                parent_task.subtasks.push(subtask_to_add);
-                save_tasks(&tasks)?; // Use ? operator
-                println!("Added subtask '{}' to task {}", description, id);
+    match parent_id_prefix { // Use parent_id_prefix here
+        Some(prefix) => {
+            if let Ok(parent_task) = resolve_task_mut(&mut tasks, &prefix) { // Use resolve_task_mut
+                parent_task.subtasks.push(new_task); // Push new task directly
+                save_tasks(&tasks)?;
+                println!("Added subtask '{}' to task with ID prefix '{}'.", description, prefix);
             } else {
-                // Return custom error if parent task is not found
-                return Err(TaskError::ParentTaskNotFound(id));
+                return Err(TaskError::ParentTaskNotFound(prefix));
             }
         }
         None => {
-            let new_id = tasks.len() + 1;
-            let mut task_to_add = new_task;
-            task_to_add.id = new_id;
-            tasks.push(task_to_add);
-            save_tasks(&tasks)?; // Use ? operator
+            tasks.push(new_task);
+            save_tasks(&tasks)?;
             println!("Added task: {}", description);
         }
     }
 
     Ok(())
 }
-
-// ... (find_task_mut helper function - needs to be accessible or moved)

@@ -1,23 +1,29 @@
 // src/commands/edit.rs
 
 use crate::data::{load_tasks, save_tasks};
-use crate::models::Task;
-use crate::errors::TaskError; // Import custom error type
-use crate::find_task_mut; // Assuming find_task_mut is accessible
+use crate::errors::TaskError;
+use crate::helpers::resolve_task_mut; // NEW: Import resolve_task_mut
+use chrono::NaiveDate;
 
-pub fn handle_edit_command(id: usize, new_description: String) -> Result<(), TaskError> { // Updated return type
+pub fn handle_edit_command(
+    id_prefix: String, // Changed to String
+    new_description: String,
+    new_due_date_str: Option<String>,
+) -> Result<(), TaskError> {
     let mut tasks = load_tasks()?;
 
-    if let Some(task) = find_task_mut(&mut tasks, id) {
+    if let Ok(task) = resolve_task_mut(&mut tasks, &id_prefix) { // Use resolve_task_mut
         task.description = new_description.clone();
-        save_tasks(&tasks)?; // Use ? operator
-        println!("Edited task {} with new description: {}", id, new_description);
+
+        if let Some(s) = new_due_date_str {
+            task.due_date = Some(NaiveDate::parse_from_str(&s, "%Y-%m-%d")?);
+        }
+
+        save_tasks(&tasks)?;
+        println!("Edited task with ID prefix '{}' with new description: {}", id_prefix, new_description);
     } else {
-        // Return custom error if task is not found
-        return Err(TaskError::TaskNotFound(id));
+        return Err(TaskError::TaskNotFound(id_prefix));
     }
 
     Ok(())
 }
-
-// ... (find_task_mut helper function - needs to be accessible or moved)
