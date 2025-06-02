@@ -47,7 +47,7 @@ To install `rcli-task`, you need to have [Rust and Cargo](https://www.rust-lang.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/rcli-task.git # Replace with your repo URL
+    git clone https://github.com/vainnor/rcli-task.git # Replace with your repo URL
     cd rcli-task
     ```
 2.  **Build the project:**
