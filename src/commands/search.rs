@@ -1,5 +1,3 @@
-// src/commands/search.rs
-
 use crate::data::{load_tasks, load_archived_tasks};
 use crate::errors::TaskError;
 use crate::models::Task;

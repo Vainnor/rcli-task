@@ -4,27 +4,22 @@ use std::fs::{self, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
 
-const APP_DATA_DIR_NAME: &str = "rcli-task"; // Name of your application's data directory
-const TASKS_FILE_NAME: &str = "tasks.json"; // Renamed for clarity
-const ARCHIVE_FILE_NAME: &str = "archive.json"; // Renamed
-const CONFIG_FILE_NAME: &str = "config.json"; // Renamed
+const APP_DATA_DIR_NAME: &str = "rcli-task";
+const TASKS_FILE_NAME: &str = "tasks.json"; 
+const ARCHIVE_FILE_NAME: &str = "archive.json"; 
+const CONFIG_FILE_NAME: &str = "config.json"; 
 
-// Helper function to get the application's data directory
-// This is cross-platform safe.
 fn get_app_data_dir() -> Result<PathBuf, TaskError> {
-    let home_dir = dirs::home_dir() // Use dirs::home_dir() for the user's home directory
+    let home_dir = dirs::home_dir() 
         .ok_or_else(|| TaskError::IoError(io::Error::new(io::ErrorKind::NotFound, "Could not find home directory")))?;
-
-    // Append your application's specific data directory name
+    
     let app_dir = home_dir.join(APP_DATA_DIR_NAME);
-
-    // Ensure the directory exists
+    
     fs::create_dir_all(&app_dir)?;
 
     Ok(app_dir)
 }
 
-// All file path functions now use the new app data directory
 fn get_data_file_path() -> Result<PathBuf, TaskError> {
     Ok(get_app_data_dir()?.join(TASKS_FILE_NAME))
 }
@@ -33,14 +28,12 @@ fn get_archive_file_path() -> Result<PathBuf, TaskError> {
     Ok(get_app_data_dir()?.join(ARCHIVE_FILE_NAME))
 }
 
-// NEW: Function to get config file path (moved from config.rs to centralize)
 pub fn get_config_file_path() -> Result<PathBuf, TaskError> {
     Ok(get_app_data_dir()?.join(CONFIG_FILE_NAME))
 }
 
-// All load/save functions now need to handle Result<PathBuf, TaskError> for path
 pub fn load_tasks() -> Result<Vec<Task>, TaskError> {
-    let path = get_data_file_path()?; // Use ? to propagate path error
+    let path = get_data_file_path()?;
 
     if !path.exists() || fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
         return Ok(Vec::new());
@@ -56,7 +49,7 @@ pub fn load_tasks() -> Result<Vec<Task>, TaskError> {
 }
 
 pub fn save_tasks(tasks: &Vec<Task>) -> Result<(), TaskError> {
-    let path = get_data_file_path()?; // Use ? to propagate path error
+    let path = get_data_file_path()?;
     let json_string = serde_json::to_string_pretty(tasks)?;
 
     let mut file = OpenOptions::new()
@@ -71,7 +64,7 @@ pub fn save_tasks(tasks: &Vec<Task>) -> Result<(), TaskError> {
 }
 
 pub fn load_archived_tasks() -> Result<Vec<Task>, TaskError> {
-    let path = get_archive_file_path()?; // Use ? to propagate path error
+    let path = get_archive_file_path()?;
 
     if !path.exists() || fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
         return Ok(Vec::new());
@@ -87,7 +80,7 @@ pub fn load_archived_tasks() -> Result<Vec<Task>, TaskError> {
 }
 
 pub fn append_to_archive(tasks_to_archive: &Vec<Task>) -> Result<(), TaskError> {
-    let path = get_archive_file_path()?; // Use ? to propagate path error
+    let path = get_archive_file_path()?;
     let mut existing_tasks = load_archived_tasks()?;
     existing_tasks.extend(tasks_to_archive.iter().cloned());
 

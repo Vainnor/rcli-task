@@ -4,7 +4,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use crate::errors::TaskError;
 use crate::models::OutputFormat;
-use crate::data::get_config_file_path; // NEW: Import from data.rs
+use crate::data::get_config_file_path;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -20,7 +20,7 @@ impl Default for Config {
 }
 
 pub fn load_config() -> Result<Config, TaskError> {
-    let path = get_config_file_path()?; // Use the imported function
+    let path = get_config_file_path()?;
 
     if !path.exists() || fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
         return Ok(Config::default());
@@ -35,7 +35,7 @@ pub fn load_config() -> Result<Config, TaskError> {
 }
 
 pub fn save_config(config: &Config) -> Result<(), TaskError> {
-    let path = get_config_file_path()?; // Use the imported function
+    let path = get_config_file_path()?;
     let json_string = serde_json::to_string_pretty(config)?;
 
     let mut file = OpenOptions::new()

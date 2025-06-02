@@ -1,5 +1,3 @@
-// src/commands/show.rs
-
 use crate::data::load_tasks;
 use crate::models::{OutputFormat, TomlTaskList};
 use crate::errors::TaskError;
