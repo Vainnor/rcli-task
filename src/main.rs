@@ -1,8 +1,13 @@
-use clap::{Parser, Subcommand};
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io::{self, Write, Read};
-use std::path::PathBuf;
+use clap::{Parser, Subcommand, ArgAction};
+use std::process;
+use crate::models::OutputFormat;
+
+mod models;
+mod data;
+mod commands;
+mod errors;
+mod helpers;
+mod config;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -16,201 +21,94 @@ enum Commands {
     Add {
         description: String,
         #[arg(long, short = 's')]
-        parent_id: Option<usize>,
+        parent_id: Option<String>,
+        #[arg(long, short = 'd')]
+        due: Option<String>,
     },
-    List,
-    Complete { id: usize },
-    Remove { id: usize },
+    List {
+        #[arg(long, short = 'f', value_enum)]
+        format: Option<OutputFormat>,
+    },
+    Complete { id: String },
+    Remove { id: String },
     Edit {
-        id: usize,
+        id: String,
         new_description: String,
+        #[arg(long, short = 'd')]
+        due: Option<String>
     },
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Task {
-    id: usize,
-    description: String,
-    completed: bool,
-    subtasks: Vec<Task>,
-}
-
-const DATA_FILE: &str = "tasks.json";
-
-fn get_data_file_path() -> PathBuf {
-    // This is a simple way to get a path. In a real application, you might
-    // want to use a more robust method to find a user's data directory.
-    let mut path = std::env::current_dir().unwrap();
-    path.push(DATA_FILE);
-    path
-}
-
-fn load_tasks() -> io::Result<Vec<Task>> {
-    let path = get_data_file_path();
-    if !path.exists() {
-        return Ok(Vec::new());
+    Show {
+        id: String,
+        #[arg(long, short = 'f', value_enum)]
+        format: Option<OutputFormat>,
+    },
+    SetFormat {
+        #[arg(value_enum)]
+        format: OutputFormat,
+    },
+    Archive,
+    ListArchive {
+        #[arg(long, short = 'f', value_enum)]
+        format: Option<OutputFormat>,
+    },
+    Search {
+        keyword: String,
+        #[arg(long, short = 'a')]
+        in_archive: bool,
+    },
+    Clear {
+        #[arg(long, short = 'f', action = ArgAction::SetTrue)]
+        force: bool,
     }
-
-    let mut file = fs::File::open(path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
-    // Deserialize the JSON string into a vector of Tasks
-    let tasks: Vec<Task> = serde_json::from_str(&contents)?;
-
-    Ok(tasks)
 }
 
-fn save_tasks(tasks: &Vec<Task>) -> io::Result<()> {
-    let path = get_data_file_path();
-    let json_string = serde_json::to_string_pretty(tasks)?; 
-    
-    let mut file = fs::File::create(path)?;
-    file.write_all(json_string.as_bytes())?;
-
-    Ok(())
-}
-
-fn main() -> io::Result<()> {
+fn main() {
     let cli = Cli::parse();
 
-    let mut tasks = load_tasks()?;
-
-    match &cli.command {
-        Commands::Add { description, parent_id } => {
-            let new_task = Task {
-                id: 0,
-                description: description.clone(),
-                completed: false,
-                subtasks: Vec::new(),
-            };
-
-            match parent_id {
-                Some(id) => {
-                    if let Some(parent_task) = find_task_mut(&mut tasks, *id) {
-                        let new_subtask_id = parent_task.subtasks.len() + 1;
-                        let mut subtask_to_add = new_task;
-                        subtask_to_add.id = new_subtask_id;
-                        parent_task.subtasks.push(subtask_to_add);
-                        save_tasks(&tasks)?;
-                        println!("Added subtask '{}' to task {}", description, id);
-                    } else {
-                        println!("Error: Parent task with ID {} not found.", id);
-                    }
-                }
-                None => {
-                    let new_id = tasks.len() + 1;
-                    let mut task_to_add = new_task;
-                    task_to_add.id = new_id;
-                    tasks.push(task_to_add);
-                    save_tasks(&tasks)?;
-                    println!("Added task: {}", description);
-                }
-            }
+    let result = match &cli.command {
+        Commands::Add { description, parent_id, due } => {
+            commands::add::handle_add_command(description.clone(), parent_id.clone(), due.clone())
         }
-        Commands::List => {
-            if tasks.is_empty() {
-                println!("No tasks yet!");
-            } else {
-                println!("Your tasks:");
-                print_tasks(&tasks, 0);
-            }
+        Commands::List { format } => {
+            let loaded_config = config::load_config().unwrap_or_default();
+            let final_format = format.unwrap_or(loaded_config.default_output_format);
+            commands::list::handle_list_command(final_format)
+        }
+        Commands::Show { id, format } => {
+            let loaded_config = config::load_config().unwrap_or_default();
+            let final_format = format.unwrap_or(loaded_config.default_output_format);
+            commands::show::handle_show_command(id.clone(), final_format)
         }
         Commands::Complete { id } => {
-            if let Some(task) = find_task_mut(&mut tasks, *id) {
-                task.completed = true;
-                mark_subtasks_complete(task);
-                save_tasks(&tasks)?;
-                println!("Marked task {} as complete.", id);
-            } else {
-                println!("Error: Task with ID {} not found.", id);
-            }
+            commands::complete::handle_complete_command(id.clone())
         }
         Commands::Remove { id } => {
-            let initial_len = count_tasks(&tasks);
-            remove_task_by_id(&mut tasks, *id);
-            let final_len = count_tasks(&tasks);
-
-            if final_len < initial_len {
-                reindex_tasks(&mut tasks);
-                save_tasks(&tasks)?;
-                println!("Removed task {}.", id);
-            } else {
-                println!("Error: Task with ID {} not found.", id);
-            }
+            commands::remove::handle_remove_command(id.clone())
         }
-        Commands::Edit { id, new_description } => {
-            if let Some(task) = find_task_mut(&mut tasks, *id) {
-                task.description = new_description.clone();
-                save_tasks(&tasks)?;
-                println!("Edited task {} with new description: {}", id, new_description);
-            } else {
-                println!("Error: Task with ID {} not found.", id);
-            }
+        Commands::Edit { id, new_description, due } => {
+            commands::edit::handle_edit_command(id.clone(), new_description.clone(), due.clone())
         }
-    }
-
-    Ok(())
-}
-
-fn find_task_mut(tasks: &mut Vec<Task>, id: usize) -> Option<&mut Task> {
-    for task in tasks.iter_mut() {
-        if task.id == id {
-            return Some(task);
+        Commands::Clear { force } => {
+            commands::clear::handle_clear_command(*force)
         }
-        if let Some(found_subtask) = find_task_mut(&mut task.subtasks, id) {
-            return Some(found_subtask);
+        Commands::Archive => {
+            commands::archive::handle_archive_command()
         }
-    }
-    None
-}
-
-fn print_tasks(tasks: &Vec<Task>, indent_level: usize) {
-    let indent = "  ".repeat(indent_level); // 2 spaces per indent level
-    for task in tasks {
-        let status = if task.completed { "[x]" } else { "[ ]" };
-        println!("{}{} {}: {}", indent, task.id, status, task.description);
-        // Recursively print subtasks
-        if !task.subtasks.is_empty() {
-            print_tasks(&task.subtasks, indent_level + 1);
+        Commands::ListArchive { format } => {
+            let loaded_config = config::load_config().unwrap_or_default();
+            let final_format = format.unwrap_or(loaded_config.default_output_format);
+            commands::list_archive::handle_list_archive_command(final_format)
         }
-    }
-}
-
-fn count_tasks(tasks: &Vec<Task>) -> usize {
-    let mut count = tasks.len();
-    for task in tasks {
-        count += count_tasks(&task.subtasks);
-    }
-    count
-}
-
-fn remove_task_by_id(tasks: &mut Vec<Task>, id: usize) -> bool {
-    let initial_len = tasks.len();
-    tasks.retain(|task| task.id != id);
-    if tasks.len() < initial_len {
-        return true;
-    }
-
-    for task in tasks.iter_mut() {
-        if remove_task_by_id(&mut task.subtasks, id) {
-            return true;
+        Commands::Search { keyword, in_archive } => {
+            commands::search::handle_search_command(keyword.clone(), *in_archive)
         }
+        Commands::SetFormat { format } => {
+            commands::set_format::handle_set_format_command(*format)
+        }
+    };
+
+    if let Err(err) = result {
+        eprintln!("Error: {}", err);
+        process::exit(1);
     }
-
-    false
-}
-
-fn reindex_tasks(tasks: &mut Vec<Task>) {
-    for (i, task) in tasks.iter_mut().enumerate() {
-        task.id = i + 1;
-        reindex_tasks(&mut task.subtasks); // Recursively re-index subtasks
-    }
-}
-
-fn mark_subtasks_complete(task: &mut Task) {
-     for subtask in task.subtasks.iter_mut() {
-         subtask.completed = true;
-         mark_subtasks_complete(subtask);
-     }
 }
