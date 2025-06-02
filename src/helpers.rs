@@ -1,4 +1,4 @@
-use crate::models::Task; // Ensure Task is imported
+use crate::models::Task;
 use colored::Colorize;
 use chrono::Local;
 use uuid::Uuid;
@@ -10,7 +10,7 @@ pub fn print_tasks(
     highlight_keyword: Option<&str>,
     initial_position_counter: Option<usize>,
 ) {
-    let indent = "  ".repeat(indent_level);
+    let indent = "    ".repeat(indent_level);
     let today = Local::now().naive_local().date();
 
     let mut current_display_index = initial_position_counter.unwrap_or(0);
@@ -66,12 +66,12 @@ pub fn print_tasks(
         let mut printed_line_content = String::new();
 
         if indent_level == 0 && initial_position_counter.is_some() {
-            current_display_index += 1; // Increment the counter for this task
+            current_display_index += 1;
             printed_line_content.push_str(&format!("{}: ", current_display_index));
         }
 
         printed_line_content.push_str(&format!(
-            "{}{} {}{}", // Concatenate indent, status, description, date
+            "{}{} {}{}",
             indent, status_str, task_description_formatted, date_suffix
         ));
 
@@ -85,14 +85,11 @@ pub fn print_tasks(
         println!(
             "{} {} {}",
             final_colored_line,
-            "(".dimmed(),
+            "-".dimmed(),
             task.id.simple().to_string().chars().take(8).collect::<String>().dimmed(),
         );
 
         if !task.subtasks.is_empty() {
-            // When calling recursively, you want to reset the position counter
-            // for the subtasks, unless the context requires global numbering.
-            // The `None` here maintains the original behavior for subtasks.
             print_tasks(&task.subtasks, indent_level + 1, highlight_keyword, None);
         }
     }
@@ -114,7 +111,6 @@ pub fn resolve_task_mut<'a>(
     }
 }
 
-// Fixed: The recursive function now correctly takes and yields mutable references.
 fn find_matching_tasks_by_id_prefix<'a>(
     tasks_to_search: &'a mut Vec<Task>,
     id_prefix: &str,
@@ -162,11 +158,10 @@ fn find_matching_tasks_by_id_prefix_immutable<'a>(
 }
 
 pub fn remove_task_by_uuid(tasks: &mut Vec<Task>, target_uuid: Uuid) -> bool {
-    // Attempt to remove from the current level
     let initial_len = tasks.len();
     tasks.retain(|task| task.id != target_uuid);
     if tasks.len() < initial_len {
-        return true; // Task found and removed at this level
+        return true;
     }
 
     for task in tasks.iter_mut() {

@@ -1,6 +1,4 @@
-// src/config.rs
-
-use serde::{Deserialize, Serialize}; // <-- Make sure this line is present
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::fs;
 use std::path::PathBuf;
@@ -9,7 +7,7 @@ use crate::OutputFormat;
 
 const CONFIG_FILE: &str = "config.json";
 
-#[derive(Debug, Serialize, Deserialize, Clone)] // <-- These derives require serde in scope
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub default_output_format: OutputFormat,
 }

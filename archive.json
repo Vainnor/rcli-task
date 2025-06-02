@@ -1,9 +1,9 @@
 [
   {
-    "id": 2,
-    "description": "Its my birthday",
+    "id": "6908b2b0-fbc9-41ba-802e-789ff6683e4a",
+    "description": "This is a completed task that has been archived",
     "completed": true,
     "subtasks": [],
-    "due_date": "2025-04-11"
+    "due_date": null
   }
 ]

@@ -1,7 +1,7 @@
 // src/commands/show.rs
 
 use crate::data::load_tasks;
-use crate::models::{Task, OutputFormat, TomlTaskList};
+use crate::models::{OutputFormat, TomlTaskList};
 use crate::errors::TaskError;
 use crate::helpers::{print_tasks, resolve_task}; // NEW: Import resolve_task (immutable version)
 use toml::to_string_pretty;

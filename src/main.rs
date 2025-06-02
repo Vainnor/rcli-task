@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ArgAction};
 use std::process;
 use crate::models::OutputFormat;
 
@@ -23,11 +23,11 @@ enum Commands {
         #[arg(long, short = 's')]
         parent_id: Option<String>,
         #[arg(long, short = 'd')]
-        due: Option<String>, // Due date as a string
+        due: Option<String>,
     },
     List {
         #[arg(long, short = 'f', value_enum)]
-        format: Option<OutputFormat>, // Still uses OutputFormat
+        format: Option<OutputFormat>,
     },
     Complete { id: String },
     Remove { id: String },
@@ -40,35 +40,34 @@ enum Commands {
     Show {
         id: String,
         #[arg(long, short = 'f', value_enum)]
-        format: Option<OutputFormat>, // Still uses OutputFormat
+        format: Option<OutputFormat>,
     },
     SetFormat {
         #[arg(value_enum)]
-        format: OutputFormat, // Still uses OutputFormat
+        format: OutputFormat,
     },
     Archive,
     ListArchive {
-        /// Output format
         #[arg(long, short = 'f', value_enum)]
         format: Option<OutputFormat>,
     },
     Search {
         keyword: String,
-        /// Search in archived tasks as well
         #[arg(long, short = 'a')]
         in_archive: bool,
     },
     Clear {
+        #[arg(long, short = 'f', action = ArgAction::SetTrue)]
         force: bool,
     }
 }
 
-fn main() { // Change return type to ()
+fn main() {
     let cli = Cli::parse();
 
     let result = match &cli.command {
         Commands::Add { description, parent_id, due } => {
-            commands::add::handle_add_command(description.clone(), parent_id.clone(), due.clone()) // Pass String for parent_id
+            commands::add::handle_add_command(description.clone(), parent_id.clone(), due.clone())
         }
         Commands::List { format } => {
             let loaded_config = config::load_config().unwrap_or_default();
@@ -78,16 +77,16 @@ fn main() { // Change return type to ()
         Commands::Show { id, format } => {
             let loaded_config = config::load_config().unwrap_or_default();
             let final_format = format.unwrap_or(loaded_config.default_output_format);
-            commands::show::handle_show_command(id.clone(), final_format) // Pass String for id
+            commands::show::handle_show_command(id.clone(), final_format)
         }
         Commands::Complete { id } => {
-            commands::complete::handle_complete_command(id.clone()) // Pass String for id
+            commands::complete::handle_complete_command(id.clone())
         }
         Commands::Remove { id } => {
-            commands::remove::handle_remove_command(id.clone()) // Pass String for id
+            commands::remove::handle_remove_command(id.clone())
         }
         Commands::Edit { id, new_description, due } => {
-            commands::edit::handle_edit_command(id.clone(), new_description.clone(), due.clone()) // Pass String for id
+            commands::edit::handle_edit_command(id.clone(), new_description.clone(), due.clone())
         }
         Commands::Clear { force } => {
             commands::clear::handle_clear_command(*force)

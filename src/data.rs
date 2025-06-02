@@ -1,5 +1,3 @@
-// src/data.rs
-
 use crate::models::{Task};
 use crate::errors::TaskError;
 use std::fs::{self, OpenOptions};
@@ -17,7 +15,6 @@ fn get_archive_file_path() -> PathBuf {
     std::env::current_dir().unwrap().join(ARCHIVE_FILE)
 }
 
-// Make load_tasks public
 pub fn load_tasks() -> Result<Vec<Task>, TaskError> {
     let path = get_data_file_path();
 
@@ -34,7 +31,6 @@ pub fn load_tasks() -> Result<Vec<Task>, TaskError> {
     Ok(tasks)
 }
 
-// Make load_archived_tasks public
 pub fn load_archived_tasks() -> Result<Vec<Task>, TaskError> {
     let path = get_archive_file_path();
 
@@ -51,11 +47,9 @@ pub fn load_archived_tasks() -> Result<Vec<Task>, TaskError> {
     Ok(tasks)
 }
 
-
-// Make append_to_archive public
 pub fn append_to_archive(tasks_to_archive: &Vec<Task>) -> Result<(), TaskError> {
     let path = get_archive_file_path();
-    let mut existing_tasks = load_archived_tasks()?; // This call is within the same module, so no pub needed for load_archived_tasks here
+    let mut existing_tasks = load_archived_tasks()?;
     existing_tasks.extend(tasks_to_archive.iter().cloned());
 
     let json_string = serde_json::to_string_pretty(&existing_tasks)?;
@@ -71,7 +65,6 @@ pub fn append_to_archive(tasks_to_archive: &Vec<Task>) -> Result<(), TaskError> 
     Ok(())
 }
 
-// Make save_tasks public
 pub fn save_tasks(tasks: &Vec<Task>) -> Result<(), TaskError> {
     let path = get_data_file_path();
     let json_string = serde_json::to_string_pretty(tasks)?;

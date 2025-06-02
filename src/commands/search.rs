@@ -3,23 +3,19 @@
 use crate::data::{load_tasks, load_archived_tasks};
 use crate::errors::TaskError;
 use crate::models::Task;
-use crate::helpers::print_tasks; // Make sure print_tasks is imported
-use colored::Colorize; // Still needed for the helper function (if you decide to keep it in helpers.rs)
-
-// src/commands/search.rs (in handle_search_command)
+use crate::helpers::print_tasks;
+use colored::Colorize;
 
 pub fn handle_search_command(keyword: String, in_archive: bool) -> Result<(), TaskError> {
     println!("Searching for '{}'...", keyword.yellow().bold());
 
     let active_tasks = load_tasks()?;
     let mut found_tasks = Vec::new();
-
-    // Original call, passing a reference to the `keyword` directly
+    
     find_matching_tasks(&active_tasks, &keyword, &mut found_tasks);
 
     if in_archive {
         let archived_tasks = load_archived_tasks()?;
-        // Original call, passing a reference to the `keyword` directly
         find_matching_tasks(&archived_tasks, &keyword, &mut found_tasks);
     }
 
@@ -29,7 +25,6 @@ pub fn handle_search_command(keyword: String, in_archive: bool) -> Result<(), Ta
         println!("Found tasks:");
         print_tasks(&found_tasks, 0, Some(&keyword), Some(0)); // Pass Some(0) for numbering search results
     }
-
     Ok(())
 }
 

@@ -1,18 +1,16 @@
-// src/commands/edit.rs
-
 use crate::data::{load_tasks, save_tasks};
 use crate::errors::TaskError;
-use crate::helpers::resolve_task_mut; // NEW: Import resolve_task_mut
+use crate::helpers::resolve_task_mut; 
 use chrono::NaiveDate;
 
 pub fn handle_edit_command(
-    id_prefix: String, // Changed to String
+    id_prefix: String,
     new_description: String,
     new_due_date_str: Option<String>,
 ) -> Result<(), TaskError> {
     let mut tasks = load_tasks()?;
 
-    if let Ok(task) = resolve_task_mut(&mut tasks, &id_prefix) { // Use resolve_task_mut
+    if let Ok(task) = resolve_task_mut(&mut tasks, &id_prefix) {
         task.description = new_description.clone();
 
         if let Some(s) = new_due_date_str {

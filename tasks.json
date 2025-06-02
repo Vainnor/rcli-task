@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f5cd5d0c-b035-4fc2-9f23-791f3e9cfb6f",
+    "description": "This is a task",
+    "completed": false,
+    "subtasks": [
+      {
+        "id": "84440ff6-cecd-4618-bcc9-1dfce1aa926c",
+        "description": "This is a sub-task",
+        "completed": false,
+        "subtasks": [],
+        "due_date": null
+      }
+    ],
+    "due_date": null
+  },
+  {
+    "id": "a69bebc0-a2de-4167-8e01-7bf80ad7573d",
+    "description": "This is a completed task",
+    "completed": true,
+    "subtasks": [],
+    "due_date": null
+  }
+]

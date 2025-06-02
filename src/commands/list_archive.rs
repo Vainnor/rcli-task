@@ -1,9 +1,7 @@
-// src/commands/list_archive.rs
-
-use crate::data::load_archived_tasks; // Load from archive
+use crate::data::load_archived_tasks;
 use crate::errors::TaskError;
 use crate::helpers::print_tasks;
-use crate::models::{OutputFormat, TomlTaskList}; // TomlTaskList is needed for TOML output
+use crate::models::{OutputFormat, TomlTaskList};
 
 pub fn handle_list_archive_command(actual_format: OutputFormat) -> Result<(), TaskError> {
     let tasks = load_archived_tasks()?;
@@ -14,7 +12,7 @@ pub fn handle_list_archive_command(actual_format: OutputFormat) -> Result<(), Ta
                 println!("No archived tasks yet!");
             } else {
                 println!("Your archived tasks:");
-                print_tasks(&tasks, 0, None, Some(0)); // Pass Some(0)
+                print_tasks(&tasks, 0, None, Some(0));
             }
         }
         OutputFormat::Json => {
