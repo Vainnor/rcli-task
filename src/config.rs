@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::fs;
-use std::path::PathBuf;
+use std::fs::OpenOptions;
 use crate::errors::TaskError;
-use crate::OutputFormat;
-
-const CONFIG_FILE: &str = "config.json";
+use crate::models::OutputFormat;
+use crate::data::get_config_file_path; // NEW: Import from data.rs
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -20,12 +19,8 @@ impl Default for Config {
     }
 }
 
-fn get_config_file_path() -> PathBuf {
-    std::env::current_dir().unwrap().join(CONFIG_FILE)
-}
-
 pub fn load_config() -> Result<Config, TaskError> {
-    let path = get_config_file_path();
+    let path = get_config_file_path()?; // Use the imported function
 
     if !path.exists() || fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
         return Ok(Config::default());
@@ -40,10 +35,15 @@ pub fn load_config() -> Result<Config, TaskError> {
 }
 
 pub fn save_config(config: &Config) -> Result<(), TaskError> {
-    let path = get_config_file_path();
+    let path = get_config_file_path()?; // Use the imported function
     let json_string = serde_json::to_string_pretty(config)?;
 
-    let mut file = fs::File::create(path)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)?;
+
     file.write_all(json_string.as_bytes())?;
 
     Ok(())
