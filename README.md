@@ -226,7 +226,7 @@ Set your preferred output format for `list` and `show` commands.
 
 ## Data Storage
 
-`rcli-task` stores its data in JSON files located in the directory where you run the commands:
+`rcli-task` stores its data in JSON files located in the user's home directory:
 
 *   `tasks.json`: Contains your active tasks.
 *   `archive.json`: Contains your completed and archived tasks.
